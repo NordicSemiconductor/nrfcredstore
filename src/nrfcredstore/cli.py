@@ -35,7 +35,7 @@ def parse_args(in_args):
     write_parser.add_argument('tag', type=int,
         help='Secure tag to write key to')
     write_parser.add_argument('type',
-        choices=['ROOT_CA_CERT','CLIENT_CERT','CLIENT_KEY'],
+        choices=['ROOT_CA_CERT','CLIENT_CERT','CLIENT_KEY', 'PSK'],
         help='Key type to write')
     write_parser.add_argument('file',
         type=argparse.FileType('r', encoding='UTF-8'),

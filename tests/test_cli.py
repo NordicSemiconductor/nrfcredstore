@@ -77,6 +77,12 @@ class TestCli():
         main(['fakedev', 'write', '123', 'ROOT_CA_CERT', 'foo.pem'], credstore)
         mock_file.assert_called_with('foo.pem', 'r', ANY, ANY, ANY)
 
+    @patch('builtins.open')
+    def test_write_psk_file(self, mock_file, credstore, offline):
+        credstore.write.return_value = True
+        main(['fakedev', 'write', '123', 'PSK', 'foo.psk'], credstore)
+        mock_file.assert_called_with('foo.psk', 'r', ANY, ANY, ANY)
+
     def test_delete(self, credstore, offline):
         credstore.delete.return_value = True
         main(['fakedev', 'delete', '123', 'CLIENT_KEY'], credstore)

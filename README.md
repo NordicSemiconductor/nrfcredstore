@@ -56,7 +56,7 @@ Secure tag   Key type           SHA
 
 ### write subcommand
 
-Write key/cert to a secure tag.
+Write key/cert to a secure tag. KEY_TYPE must be either ROOT_CA_CERT, CLIENT_CERT, CLIENT_KEY, or PSK.
 
 ```
 usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev write SECURE_TAG KEY_TYPE FILENAME
