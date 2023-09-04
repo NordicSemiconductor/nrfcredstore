@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "nrfcredstore"
-version = "0.0.1"
+version = "0.0.2"
 description = "Manage credentials stored in Nordic Semiconductor modems."
 authors = ["Nordic Semiconductor ASA"]
 license = "BSD-3-Clause"
