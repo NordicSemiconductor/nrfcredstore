@@ -39,6 +39,10 @@ class TestATClient:
         self.serial.readline.return_value = '+CME ERROR: 514\r\n'.encode('utf-8')
 
     @pytest.fixture
+    def error_code_0_resp(self, at_client):
+        self.serial.readline.return_value = '+CME ERROR: 0\r\n'.encode('utf-8')
+
+    @pytest.fixture
     def error_ok_resp(self, at_client):
         self.serial.readline.side_effect = [b'ERROR', b'OK']
 
@@ -109,6 +113,11 @@ class TestATClient:
         with pytest.raises(ATCommandError) as excinfo:
             at_client.at_command('AT')
         assert 'Not allowed' in str(excinfo.value)
+
+    def test_unsupported_cmd_error_code(self, at_client, error_code_0_resp):
+        with pytest.raises(ATCommandError) as excinfo:
+            at_client.at_command('AT')
+        assert 'AT command not supported by firmware version' in str(excinfo.value)
 
     def test_at_command_with_single_line_response(self, at_client):
         self.serial.readline.side_effect = [b'single', b'OK']

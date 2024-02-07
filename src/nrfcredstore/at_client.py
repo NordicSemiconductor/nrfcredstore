@@ -1,6 +1,7 @@
 from nrfcredstore.exceptions import ATCommandError, NoATClientException
 
 ERR_CODE_TO_MSG = {
+    0:   'AT command not supported by firmware version. Upgrade modem firmware?',
     513: 'Not found',
     514: 'Not allowed',
     515: 'Memory full',

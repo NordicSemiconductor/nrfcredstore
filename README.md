@@ -80,6 +80,9 @@ usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev delete SECURE_
 
 ### generate subcommand
 
+> [!IMPORTANT]
+> This command requires modem firmware version greater than or equal to 1.3.0.
+
 Generate a private key in the modem and output a certificate signing request.
 
 ```
