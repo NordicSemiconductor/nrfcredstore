@@ -11,6 +11,11 @@ KEY_TYPES_OR_ANY = list(map(lambda type: type.name, CredType))
 KEY_TYPES = KEY_TYPES_OR_ANY.copy()
 KEY_TYPES.remove('ANY')
 
+ERR_UNKNOWN = 1
+ERR_NO_AT_CLIENT = 10
+ERR_AT_COMMAND = 11
+ERR_TIMEOUT = 12
+ERR_SERIAL = 13
 
 def parse_args(in_args):
     parser = argparse.ArgumentParser(description='Manage certificates stored in a cellular modem.')
@@ -89,6 +94,10 @@ def exec_cmd(args, credstore):
         print(f'New private key generated in secure tag {args.tag}')
         print(f'Wrote CSR in DER format to {args.file.name}')
 
+def exit_with_msg(exitcode, msg):
+    print(msg)
+    exit(exitcode)
+
 def main(in_args, credstore):
     at_client = credstore.at_client
     try:
@@ -98,14 +107,16 @@ def main(in_args, credstore):
             at_client.verify()
             at_client.enable_error_codes()
         exec_cmd(args, credstore)
-    except serial.SerialException as err:
-        print(f'Serial error: {err}')
     except NoATClientException:
-        print('The device does not respond to AT commands. Please flash at_client sample.')
+        exit_with_msg(ERR_NO_AT_CLIENT, 'The device does not respond to AT commands. Please flash at_client sample.')
     except ATCommandError as err:
-        print(err)
+        exit_with_msg(ERR_AT_COMMAND, err)
     except TimeoutError as err:
-        print('The device did not respond in time. Please try again.')
+        exit_with_msg(ERR_TIMEOUT, 'The device did not respond in time. Please try again.')
+    except serial.SerialException as err:
+        exit_with_msg(ERR_SERIAL, f'Serial error: {err}')
+    except Exception as err:
+        exit_with_msg(ERR_UNKNOWN, f'Unhandled Error: {err}')
 
 def run():
     main(sys.argv[1:], CredStore(ATClient(serial.Serial())))
