@@ -125,9 +125,9 @@ dGVzdA==
         self.at_client.at_command.assert_called_with(f'AT%KEYGEN=12345678,2,0')
 
     def test_generate_with_attributes(self, cred_store, csr_resp):
-        cred_store.keygen(12345678, Mock(), 'O=Nordic Semiconductor,L=Trondheim,C=no')
+        cred_store.keygen(12345678, Mock(), 'O=Nordic Semiconductor,L=Trondheim,C=no,CN=mydevice')
         self.at_client.at_command.assert_called_with(
-            f'AT%KEYGEN=12345678,2,0,"O=Nordic Semiconductor,L=Trondheim,C=no"')
+            f'AT%KEYGEN=12345678,2,0,"O=Nordic Semiconductor,L=Trondheim,C=no,CN=mydevice"')
 
     def test_generate_writes_csr_to_stream(self, cred_store, csr_resp):
         fake_binary_file = Mock()

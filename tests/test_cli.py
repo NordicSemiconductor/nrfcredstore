@@ -98,13 +98,19 @@ class TestCli():
     def test_generate_tag(self, mock_file, credstore, offline):
         credstore.keygen.return_value = True
         main(['fakedev', 'generate', '123', 'foo.der'], credstore)
-        credstore.keygen.assert_called_with(123, ANY)
+        credstore.keygen.assert_called_with(123, ANY, ANY)
 
     @patch('builtins.open')
     def test_generate_file(self, mock_file, credstore, offline):
         credstore.keygen.return_value = True
         main(['fakedev', 'generate', '123', 'foo.der'], credstore)
         mock_file.assert_called_with('foo.der', 'wb', ANY, ANY, ANY)
+
+    @patch('builtins.open')
+    def test_generate_with_attributes(self, credstore, offline):
+        credstore.keygen.return_value = True
+        main(['fakedev', 'generate', '123', 'foo.der', '--attributes', 'CN=foo'], credstore)
+        credstore.keygen.assert_called_with(123, ANY, 'CN=foo')
 
     def test_no_at_client_exit_code(self, credstore, at_client):
         at_client.verify.side_effect = NoATClientException()

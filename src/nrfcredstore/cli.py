@@ -59,6 +59,8 @@ def parse_args(in_args):
         help='Secure tag to store generated key')
     generate_parser.add_argument('file', type=argparse.FileType('wb'),
         help='File to store CSR in DER format')
+    generate_parser.add_argument('--attributes', type=str, default='',
+        help='Comma-separated list of attribute ID and value pairs for the CSR response')
 
     return parser.parse_args(in_args)
 
@@ -90,7 +92,7 @@ def exec_cmd(args, credstore):
         else:
             raise RuntimeError('delete failed')
     elif args.subcommand=='generate':
-        credstore.keygen(args.tag, args.file)
+        credstore.keygen(args.tag, args.file, args.attributes)
         print(f'New private key generated in secure tag {args.tag}')
         print(f'Wrote CSR in DER format to {args.file.name}')
 
