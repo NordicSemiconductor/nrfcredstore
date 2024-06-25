@@ -77,7 +77,7 @@ class CredStore:
 
         if type == CredType.ANY:
             raise ValueError
-        cert = '\n' + file.read().rstrip()
+        cert = file.read().rstrip()
         return is_ok(self.at_client.at_command(f'AT%CMNG=0,{tag},{type.value},"{cert}"'))
 
     def delete(self, tag: int, type: CredType):

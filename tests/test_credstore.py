@@ -109,7 +109,7 @@ dGVzdA==
 -----END CERTIFICATE-----'''
         fake_file = io.StringIO(cert_text)
         assert cred_store.write(567890, CredType.CLIENT_KEY, fake_file)
-        self.at_client.at_command.assert_called_with(f'AT%CMNG=0,567890,2,"\n{cert_text}"')
+        self.at_client.at_command.assert_called_with(f'AT%CMNG=0,567890,2,"{cert_text}"')
 
     def test_write_fail(self, cred_store, at_error):
         with pytest.raises(ATCommandError):
