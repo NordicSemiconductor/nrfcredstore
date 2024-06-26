@@ -26,6 +26,15 @@ class TestCredStore:
         ]
 
     @pytest.fixture
+    def list_all_resp_blank_lines(self, cred_store):
+        cred_store.at_client.at_command.return_value = [
+            '',
+            '%CMNG: 12345678, 0, "978C...02C4"',
+            '%CMNG: 567890, 1, "C485...CF09"',
+            ''
+        ]
+
+    @pytest.fixture
     def ok_resp(self, cred_store):
         cred_store.at_client.at_command.return_value = []
 
@@ -78,6 +87,12 @@ class TestCredStore:
         assert first.sha == '978C...02C4'
 
     def test_list_all_credentials_returns_multiple_credentials(self, cred_store, list_all_resp):
+        result = cred_store.list()
+        assert len(result) == 2
+        assert result[0].sha == '978C...02C4'
+        assert result[1].sha == 'C485...CF09'
+
+    def test_list_all_with_blank_lines_in_resp(self, cred_store, list_all_resp_blank_lines):
         result = cred_store.list()
         assert len(result) == 2
         assert result[0].sha == '978C...02C4'

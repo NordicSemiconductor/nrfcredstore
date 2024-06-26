@@ -61,6 +61,8 @@ class CredStore:
                 cmd = f'{cmd},{CredType(type).value}'
 
         response_lines = self.at_client.at_command(cmd)
+        response_lines = [line for line in response_lines if line.strip()]
+
         columns = map(lambda line: line.replace('%CMNG: ', '').replace('"', '').split(','), response_lines)
         cred_map = map(lambda columns:
                 Credential(int(columns[0]), int(columns[1]), columns[2].strip()),
