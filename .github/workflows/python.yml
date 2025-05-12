@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
           path: htmlcov/
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
-        if: ${{ matrix.python-version == '3.11' && env.SONAR_TOKEN != '' }}
+        if: ${{ matrix.python-version == '3.13' && env.SONAR_TOKEN != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -55,10 +55,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.11
+      - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.13
       - name: Install poetry
         run: |
           curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.4.2 python3 -
