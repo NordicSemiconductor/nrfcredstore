@@ -177,6 +177,34 @@ class ATCommandInterface(CredentialCommandInterface):
         attest_tok = output.split('"')[1]
         return attest_tok
 
+    def get_csr(self, sectag=0, cn=""):
+        """Ask a device with modem to generate CSR using AT%KEYGEN.
+
+        Returns:
+            x509.CertificateSigningRequest object.
+        """
+
+        # provide attributes parameter if a custom CN is specified
+        attr = f',"CN={cn}"' if len(cn) else ''
+
+        self.at_command(f'AT%KEYGEN={sectag},2,0{attr}')
+
+        # include the CR in OK because 'OK' could be found in the CSR string
+        retval, output = self.comms.expect_response("OK", "ERROR", "%KEYGEN:")
+
+        if not retval:
+            return None
+
+        # convert the encoded blob to an actual cert
+        csr_blob = str(output).split('"')[1]
+        logger.debug('CSR blob: {}'.format(csr_blob))
+
+        # format is "body.cose"
+        # body is base64 encoded DER
+        # cose is base64 encoded COSE header (CBOR)
+
+        return csr_blob
+
 TLS_CRED_TYPES = ["CA", "SERV", "PK"]
 # This chunk size can be any multiple of 4, as long as it is small enough to fit within the
 # Zephyr shell buffer.
