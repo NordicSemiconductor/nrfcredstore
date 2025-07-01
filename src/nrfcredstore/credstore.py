@@ -27,8 +27,8 @@ class Credential:
         self.sha = sha
 
 class CredStore:
-    def __init__(self, at_client):
-        self.at_client = at_client
+    def __init__(self, command_interface):
+        self.command_interface = command_interface
 
     def func_mode(self, mode):
         """Set modem functioning mode
@@ -36,7 +36,7 @@ class CredStore:
         See AT Command Reference Guide for valid modes.
         """
 
-        return self.at_client.at_command(f'AT+CFUN={mode}') == []
+        return self.command_interface.at_command(f'AT+CFUN={mode}', wait_for_result=True)
 
     def list(self, tag = None, type: CredType = CredType.ANY) -> List[Credential]:
         """List stored credentials
@@ -57,8 +57,12 @@ class CredStore:
             if type != CredType.ANY:
                 cmd = f'{cmd},{CredType(type).value}'
 
-        response_lines = self.at_client.at_command(cmd)
-        response_lines = [line for line in response_lines if line.strip()]
+        self.command_interface.at_command(cmd, wait_for_result=False)
+        result, response = self.command_interface.comms.expect_response("OK", "ERROR", "%CMNG: ")
+        if not result:
+            raise RuntimeError("Failed to list credentials")
+        response_lines = response.splitlines()
+        response_lines = [line.strip() for line in response_lines if line.strip()]
 
         columns = map(lambda line: line.replace('%CMNG: ', '').replace('"', '').split(','), response_lines)
         cred_map = map(lambda columns:
@@ -77,7 +81,8 @@ class CredStore:
         if type == CredType.ANY:
             raise ValueError
         cert = file.read().rstrip()
-        return self.at_client.at_command(f'AT%CMNG=0,{tag},{type.value},"{cert}"')
+        if not self.command_interface.at_command(f'AT%CMNG=0,{tag},{type.value},"{cert}"', wait_for_result=True):
+            raise RuntimeError("Failed to write credential")
 
     def delete(self, tag: int, type: CredType):
         """Delete a credential from the modem
@@ -87,22 +92,19 @@ class CredStore:
 
         if type == CredType.ANY:
             raise ValueError
-        return self.at_client.at_command(f'AT%CMNG=3,{tag},{type.value}')
+        if not self.command_interface.at_command(f'AT%CMNG=3,{tag},{type.value}', wait_for_result=True):
+            raise RuntimeError("Failed to delete credential")
 
     def keygen(self, tag: int, file: io.BufferedIOBase, attributes: str = ''):
         """Generate a new private key and return a certificate signing request in DER format"""
-        cmd = f'AT%KEYGEN={tag},2,0'
 
-        if attributes != '':
-            cmd = f'{cmd},"{attributes}"'
+        keygen_output = self.command_interface.get_csr(sectag=tag, attributes=attributes)
 
-        response_lines = self.at_client.at_command(cmd)
-        for l in response_lines:
-            if not l.startswith('%KEYGEN'):
-                continue
-            keygen_output = l.replace('%KEYGEN: "', '')
-            csr_der_b64 = keygen_output.split('.')[0]
-            csr_der_bytes = base64.urlsafe_b64decode(csr_der_b64 + '===')
-            file.write(csr_der_bytes)
+        if not keygen_output:
+            raise RuntimeError("Failed to generate key")
 
+        csr_der_b64 = keygen_output.split('.')[0]
+        csr_der_bytes = base64.urlsafe_b64decode(csr_der_b64 + '===')
+
+        file.write(csr_der_bytes)
         file.close()

@@ -2,7 +2,7 @@ import pytest
 
 from unittest.mock import Mock, ANY, patch
 from serial import SerialException
-from nrfcredstore.cli import main
+from nrfcredstore.cli import main, parse_args, run, FUN_MODE_OFFLINE
 
 from nrfcredstore.credstore import CredType
 from nrfcredstore.exceptions import NoATClientException, ATCommandError
@@ -11,138 +11,118 @@ from nrfcredstore.exceptions import NoATClientException, ATCommandError
 class TestCli():
 
     @pytest.fixture
-    def at_client(self):
-        at_client = Mock()
-        return at_client
+    def command_interface(self):
+        command_interface = Mock()
+        return command_interface
 
     @pytest.fixture
-    def credstore(self, at_client):
+    def credstore(self, command_interface):
         credstore = Mock()
-        credstore.at_client = at_client
+        credstore.command_interface = command_interface
         return credstore
-
-    @pytest.fixture
-    def offline(self, credstore):
-        credstore.funk_mode.return_value = True
 
     @pytest.fixture
     def empty_cred_list(self, credstore):
         credstore.list.return_value = []
 
-    def test_device_passed_to_connect(self, credstore, at_client, offline, empty_cred_list):
-        main(['/dev/tty.usb', 'list'], credstore)
-        at_client.connect.assert_called_with('/dev/tty.usb', ANY, ANY)
+    # non-responsive device
+    def test_non_responsive_device(self, credstore, command_interface):
+        command_interface.detect_shell_mode.side_effect = TimeoutError()
+        with pytest.raises(TimeoutError) as e:
+            main(parse_args(['fakedev', 'list']), credstore)
+        assert e.type == TimeoutError
 
-    def test_baudrate_passed_to_connect(self, credstore, at_client, offline, empty_cred_list):
-        main(['fakedev', '--baudrate', '9600', 'list'], credstore)
-        at_client.connect.assert_called_with(ANY, 9600, ANY)
+    def test_non_responsive_device(self, credstore, command_interface, empty_cred_list):
+        command_interface.detect_shell_mode.enable_error_codes.return_value = False
+        main(parse_args(['fakedev', 'list']), credstore)
 
-    def test_timeout_passed_to_connect(self, credstore, at_client, offline, empty_cred_list):
-        main(['fakedev', '--timeout', '3', 'list'], credstore)
-        at_client.connect.assert_called_with(ANY, ANY, 3)
-
-    def test_at_client_verify(self, credstore, at_client, offline, empty_cred_list):
-        main(['fakedev', 'list'], credstore)
-        at_client.verify.assert_called()
-
-    @patch('builtins.print')
-    def test_at_client_verify_fail(self, mock_print, credstore, at_client):
-        at_client.verify.side_effect = NoATClientException()
-        with pytest.raises(SystemExit) as e:
-            main(['fakedev', 'list'], credstore)
-        assert 'does not respond to AT commands' in mock_print.call_args[0][0]
-
-    def test_at_client_enable_error_codes(self, credstore, at_client, offline, empty_cred_list):
-        main(['fakedev', 'list'], credstore)
-        at_client.enable_error_codes.assert_called()
-
-    def test_list_default(self, credstore, offline, empty_cred_list):
-        main(['fakedev', 'list'], credstore)
+    def test_list_default(self, credstore, empty_cred_list):
+        main(parse_args(['fakedev', 'list']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         credstore.list.assert_called_with(None, CredType.ANY)
 
-    def test_list_with_tag(self, credstore, offline, empty_cred_list):
-        main(['fakedev', 'list', '--tag', '123'], credstore)
+    def test_list_with_tag(self, credstore, empty_cred_list):
+        main(parse_args(['fakedev', 'list', '--tag', '123']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         credstore.list.assert_called_with(123, ANY)
 
-    def test_list_with_type(self, credstore, offline, empty_cred_list):
-        main(['fakedev', 'list', '--tag', '123', '--type', 'CLIENT_KEY'], credstore)
+    def test_list_with_type(self, credstore, empty_cred_list):
+        main(parse_args(['fakedev', 'list', '--tag', '123', '--type', 'CLIENT_KEY']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         credstore.list.assert_called_with(ANY, CredType.CLIENT_KEY)
 
-    def test_write_tag_and_type(self, credstore, offline):
+    def test_write_tag_and_type(self, credstore):
         credstore.write.return_value = True
-        main(['fakedev', 'write', '123', 'ROOT_CA_CERT', 'tests/fixtures/root-ca.pem'], credstore)
+        main(parse_args(['fakedev', 'write', '123', 'ROOT_CA_CERT', 'tests/fixtures/root-ca.pem']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         credstore.write.assert_called_with(123, CredType.ROOT_CA_CERT, ANY)
 
     @patch('builtins.open')
-    def test_write_file(self, mock_file, credstore, offline):
+    def test_write_file(self, mock_file, credstore):
         credstore.write.return_value = True
-        main(['fakedev', 'write', '123', 'ROOT_CA_CERT', 'foo.pem'], credstore)
+        main(parse_args(['fakedev', 'write', '123', 'ROOT_CA_CERT', 'foo.pem']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         mock_file.assert_called_with('foo.pem', 'r', ANY, ANY, ANY)
 
     @patch('builtins.open')
-    def test_write_psk_file(self, mock_file, credstore, offline):
+    def test_write_psk_file(self, mock_file, credstore):
         credstore.write.return_value = True
-        main(['fakedev', 'write', '123', 'PSK', 'foo.psk'], credstore)
+        main(parse_args(['fakedev', 'write', '123', 'PSK', 'foo.psk']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         mock_file.assert_called_with('foo.psk', 'r', ANY, ANY, ANY)
 
-    def test_delete(self, credstore, offline):
+    def test_delete(self, credstore):
         credstore.delete.return_value = True
-        main(['fakedev', 'delete', '123', 'CLIENT_KEY'], credstore)
+        main(parse_args(['fakedev', 'delete', '123', 'CLIENT_KEY']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         credstore.delete.assert_called_with(123, CredType.CLIENT_KEY)
 
-    def test_delete_any_should_fail(self, credstore, offline):
+    def test_delete_any_should_fail(self, credstore):
         with pytest.raises(SystemExit):
-            main(['fakedev', 'delete', '123', 'ANY'], credstore)
+            main(parse_args(['fakedev', 'delete', '123', 'ANY']), credstore)
 
     @patch('builtins.open')
-    def test_generate_tag(self, mock_file, credstore, offline):
+    def test_generate_tag(self, mock_file, credstore):
         credstore.keygen.return_value = True
-        main(['fakedev', 'generate', '123', 'foo.der'], credstore)
+        main(parse_args(['fakedev', 'generate', '123', 'foo.der']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         credstore.keygen.assert_called_with(123, ANY, ANY)
 
     @patch('builtins.open')
-    def test_generate_file(self, mock_file, credstore, offline):
+    def test_generate_file(self, mock_file, credstore):
         credstore.keygen.return_value = True
-        main(['fakedev', 'generate', '123', 'foo.der'], credstore)
+        main(parse_args(['fakedev', 'generate', '123', 'foo.der']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         mock_file.assert_called_with('foo.der', 'wb', ANY, ANY, ANY)
 
     @patch('builtins.open')
-    def test_generate_with_attributes(self, credstore, offline):
+    def test_generate_with_attributes(self, credstore):
         credstore.keygen.return_value = True
-        main(['fakedev', 'generate', '123', 'foo.der', '--attributes', 'CN=foo'], credstore)
+        main(parse_args(['fakedev', 'generate', '123', 'foo.der', '--attributes', 'CN=foo']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         credstore.keygen.assert_called_with(123, ANY, 'CN=foo')
 
-    def test_no_at_client_exit_code(self, credstore, at_client):
-        at_client.verify.side_effect = NoATClientException()
-        with pytest.raises(SystemExit) as e:
-            main(['fakedev', 'list'], credstore)
-        assert e.type == SystemExit
-        assert e.value.code == 10
+    def test_imei(self, credstore):
+        credstore.command_interface.get_imei.return_value = '123456789012345'
+        args = parse_args(['fakedev', 'imei'])
+        main(args, credstore)
+        credstore.command_interface.get_imei.assert_called_once()
 
-    def test_at_command_error_exit_code(self, credstore, at_client):
-        at_client.verify.side_effect = ATCommandError()
-        with pytest.raises(SystemExit) as e:
-            main(['fakedev', 'list'], credstore)
-        assert e.type == SystemExit
-        assert e.value.code == 11
+    def test_attestation_token(self, credstore):
+        credstore.command_interface.get_attestation_token.return_value = '2dn3hQFQUDYxVDkxRPCAIhIbZAFifQNQGv86y_GmR2SiY0wmRsHGVFDT791_BPH8YOWFiyCHND1q.0oRDoQEmoQRBIfZYQGuXwJliinHc6xDPruiyjsaXyXZbZVpUuOhHG9YS8L05VuglCcJhMN4EUhWVGpaHgNnHHno6ahi-d5tOeZmAcNY'
+        args = parse_args(['fakedev', 'attoken'])
+        main(args, credstore)
+        credstore.command_interface.get_attestation_token.assert_called_once()
 
-    def test_timeout_error_exit_code(self, credstore, at_client):
-        at_client.verify.side_effect = TimeoutError()
-        with pytest.raises(SystemExit) as e:
-            main(['fakedev', 'list'], credstore)
-        assert e.type == SystemExit
-        assert e.value.code == 12
+    def test_at_command_error_exit_code(self, credstore):
+        credstore.func_mode.side_effect = RuntimeError("Failed to set modem to offline mode.")
+        with pytest.raises(RuntimeError) as e:
+            main(parse_args(['fakedev', 'list']), credstore)
+        assert e.type == RuntimeError
 
-    def test_serial_exception_exit_code(self, credstore, at_client):
-        at_client.connect.side_effect = SerialException()
-        with pytest.raises(SystemExit) as e:
-            main(['fakedev', 'list'], credstore)
-        assert e.type == SystemExit
-        assert e.value.code == 13
-
-    def test_unhandled_exception_exit_code(self, credstore, at_client):
-        at_client.verify.side_effect = Exception()
-        with pytest.raises(SystemExit) as e:
-            main(['fakedev', 'list'], credstore)
-        assert e.type == SystemExit
-        assert e.value.code == 1
+    def test_cannot_find_device(self):
+        with patch("nrfcredstore.comms.__init__", return_value=Mock()) as mock_comms:
+            mock_comms.side_effect = Exception("No device found")
+            with pytest.raises(Exception) as e:
+                run(['nrfcredstore', 'fakedev', 'list'])
+        assert e.type == Exception

@@ -1,10 +1,12 @@
 import argparse
 import sys
 import serial
+import logging
 
 from nrfcredstore.exceptions import ATCommandError, NoATClientException
-from nrfcredstore.at_client import ATClient
+from nrfcredstore.command_interface import ATCommandInterface
 from nrfcredstore.credstore import CredStore, CredType
+from nrfcredstore.comms import Comms
 
 FUN_MODE_OFFLINE = 4
 KEY_TYPES_OR_ANY = list(map(lambda type: type.name, CredType))
@@ -19,7 +21,7 @@ ERR_SERIAL = 13
 
 def parse_args(in_args):
     parser = argparse.ArgumentParser(description='Manage certificates stored in a cellular modem.')
-    parser.add_argument('dev', help='Serial device used to communicate with the modem.')
+    parser.add_argument('dev', help='Device used to communicate with the modem.')
     parser.add_argument('--baudrate', type=int, default=115200, help='Serial baudrate')
     parser.add_argument('--timeout', type=int, default=3,
         help='Serial communication timeout in seconds')
@@ -55,6 +57,10 @@ def parse_args(in_args):
 
     deleteall_parser = subparsers.add_parser('deleteall', help='Delete all keys in a secure tag')
 
+    imei_parser = subparsers.add_parser('imei', help='Get IMEI of the modem')
+
+    attoken_parser = subparsers.add_parser('attoken', help='Get attestation token of the modem')
+
     # add generate command and args
     generate_parser = subparsers.add_parser('generate', help='Generate private key')
     generate_parser.add_argument('tag', type=int,
@@ -68,7 +74,8 @@ def parse_args(in_args):
 
 def exec_cmd(args, credstore):
     if args.subcommand:
-        credstore.func_mode(FUN_MODE_OFFLINE)
+        if not credstore.func_mode(FUN_MODE_OFFLINE):
+            raise RuntimeError("Failed to set modem to offline mode.")
 
     if args.subcommand == 'list':
         ct = CredType[args.type]
@@ -104,30 +111,43 @@ def exec_cmd(args, credstore):
         credstore.keygen(args.tag, args.file, args.attributes)
         print(f'New private key generated in secure tag {args.tag}')
         print(f'Wrote CSR in DER format to {args.file.name}')
+    elif args.subcommand=='imei':
+        imei = credstore.command_interface.get_imei()
+        if imei is None:
+            raise RuntimeError("Failed to get IMEI.")
+        print(f'IMEI: {imei}')
+    elif args.subcommand=='attoken':
+        attoken = credstore.command_interface.get_attestation_token()
+        if attoken is None:
+            raise RuntimeError("Failed to get attestation token.")
+        print(f'Attestation token: {attoken}')
 
 def exit_with_msg(exitcode, msg):
     print(msg)
     exit(exitcode)
 
-def main(in_args, credstore):
-    at_client = credstore.at_client
-    try:
-        args = parse_args(in_args)
-        if args.dev:
-            at_client.connect(args.dev, args.baudrate, args.timeout)
-            at_client.verify()
-            at_client.enable_error_codes()
-        exec_cmd(args, credstore)
-    except NoATClientException:
-        exit_with_msg(ERR_NO_AT_CLIENT, 'The device does not respond to AT commands. Please flash at_client sample.')
-    except ATCommandError as err:
-        exit_with_msg(ERR_AT_COMMAND, err)
-    except TimeoutError as err:
-        exit_with_msg(ERR_TIMEOUT, 'The device did not respond in time. Please try again.')
-    except serial.SerialException as err:
-        exit_with_msg(ERR_SERIAL, f'Serial error: {err}')
-    except Exception as err:
-        exit_with_msg(ERR_UNKNOWN, f'Unhandled Error: {err}')
+def main(args, credstore):
+    credstore.command_interface.detect_shell_mode()
+    credstore.command_interface.enable_error_codes()
+    exec_cmd(args, credstore)
 
-def run():
-    main(sys.argv[1:], CredStore(ATClient(serial.Serial())))
+def run(argv=sys.argv):
+    logging.basicConfig(level='DEBUG')
+    args = parse_args(argv[1:])
+    comms = None
+
+    # use inquirer to find the device
+    if args.dev == 'auto':
+        comms = Comms(list_all=True, baudrate=args.baudrate, timeout=args.timeout)
+    elif args.dev == 'rtt':
+        comms = Comms(rtt=True, baudrate=args.baudrate, timeout=args.timeout)
+    # if dev is just numbers, assume it's an rtt device
+    elif args.dev.isdigit():
+        comms = Comms(rtt = True, serial_number = int(args.dev), timeout=args.timeout)
+    # otherwise, assume it's a serial device
+    else:
+        comms = Comms(port=args.dev, baudrate=args.baudrate, timeout=args.timeout)
+
+    cred_if = ATCommandInterface(comms)
+
+    main(args, CredStore(cred_if))
