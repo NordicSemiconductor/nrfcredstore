@@ -189,6 +189,8 @@ def select_jlink(jlinks : List[int], list_all: bool) -> int:
                 choices=[(f"{serial} {extract_product_name_from_jlink_serial(serial)}", serial) for serial in serial_numbers],
             )
     answer = inquirer.prompt([question])
+    if not answer:
+        raise Exception("No J-Link device selected")
     return answer["serial"]
 
 
@@ -214,6 +216,8 @@ def select_device_by_serial(serial_number : Union[str, int], list_all : bool) ->
         choices=[(port.device, port) for port in serial_devices],
     )
     answer = inquirer.prompt([question])
+    if not answer:
+        raise Exception("No serial port selected")
     selected_port = answer["port"]
     return (selected_port, serial_number)
 
@@ -259,6 +263,8 @@ def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : 
             choices=sorted([(f"{port.device} {extract_product_name_from_serial_device(port)}", port) for port in ports]),
         )
         answer = inquirer.prompt([question])
+        if not answer:
+            raise Exception("No serial port selected")
         selected_port = answer["port"]
         extracted_serial_number = extract_serial_number_from_serial_device(
             selected_port
@@ -278,6 +284,8 @@ def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : 
         choices=[(f"{port.device} {name}", port) for name, serial, port in nordic_boards],
     )
     answer = inquirer.prompt([question])
+    if not answer:
+        raise Exception("No serial port selected")
     selected_port = answer["port"]
     extracted_serial_number = extract_serial_number_from_serial_device(selected_port)
     return (selected_port, extracted_serial_number)
@@ -336,7 +344,7 @@ class Comms:
         output = ''
         time_end = time.time() + timeout
         while time.time() < time_end:
-            line = self.read_line()
+            line = self.read_line() # type: ignore
             if line:
                 line = line.strip()
                 # Remove ANSI escape codes
@@ -364,12 +372,12 @@ class Comms:
 
     def write_line(self, data : str):
         logger.debug(f"> {data}")
-        self.write((data + self.line_ending).encode('ascii'))
+        self.write((data + self.line_ending).encode('ascii')) # type: ignore
 
     def _readline_rtt(self) -> Optional[str]:
         time_end = time.time() + self.timeout
         while time.time() < time_end:
-            self._rtt_line_buffer += self.jlink_api.rtt_read(channel_index=0, length=4096)
+            self._rtt_line_buffer += self.jlink_api.rtt_read(channel_index=0, length=4096) # type: ignore
             # Find first line ending
             line_end = self._rtt_line_buffer.find(self.line_ending)
             if line_end != -1:
@@ -383,7 +391,7 @@ class Comms:
 
     def _readline_serial(self) -> Optional[str]:
         # Read a line from the serial port
-        line = self.serial_api.readline()
+        line = self.serial_api.readline() # type: ignore
         if line:
             line = line.decode('utf-8', errors="replace").strip()
             logger.debug(f"< {line}")
@@ -393,11 +401,11 @@ class Comms:
     def _write_rtt(self, data: bytes):
         # Hacky workaround from old rtt_interface
         for i in range(0, len(data), 12):
-            self.jlink_api.rtt_write(channel_index=0, msg=data[i : i + 12])
+            self.jlink_api.rtt_write(channel_index=0, msg=data[i : i + 12]) # type: ignore
             time.sleep(0.01)
 
     def _write_serial(self, data: bytes):
-        self.serial_api.write(data)
+        self.serial_api.write(data) # type: ignore
 
     def _reset_input_buffer_rtt(self):
         # RTT does not have an input buffer to reset, but we can clear the line buffer
