@@ -25,6 +25,10 @@ def parse_args(in_args):
     parser.add_argument('--baudrate', type=int, default=115200, help='Serial baudrate')
     parser.add_argument('--timeout', type=int, default=3,
         help='Serial communication timeout in seconds')
+    parser.add_argument('--debug', action='store_true',
+        help='Enable debug logging')
+    parser.add_argument('--cmd-type', choices=['at', 'shell', 'auto'], default='auto',
+        help='Command type to use. "at" for AT commands, "shell" for shell commands, "auto" to detect automatically.')
 
     subparsers = parser.add_subparsers(
         title='subcommands', dest='subcommand', help='Certificate related commands'
@@ -127,14 +131,21 @@ def exit_with_msg(exitcode, msg):
     exit(exitcode)
 
 def main(args, credstore):
-    credstore.command_interface.detect_shell_mode()
+    if args.cmd_type == 'auto':
+        credstore.command_interface.detect_shell_mode()
+    elif args.cmd_type == 'shell':
+        credstore.command_interface.set_shell_mode(True)
     credstore.command_interface.enable_error_codes()
     exec_cmd(args, credstore)
 
 def run(argv=sys.argv):
-    logging.basicConfig(level='DEBUG')
     args = parse_args(argv[1:])
     comms = None
+
+    if args.debug:
+        logging.basicConfig(level='DEBUG')
+    else:
+        logging.basicConfig(level='ERROR')
 
     # Use inquirer to find the device
     if args.dev == 'auto':

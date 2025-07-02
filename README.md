@@ -15,7 +15,8 @@ For the device to respond to AT commands, the firmware on the device must have a
 ## Command Line Interface
 
 ```
-usage: nrfcredstore [-h] [--baudrate BAUDRATE] [--timeout TIMEOUT] dev {list,write,delete,deleteall,imei,attoken,generate} ...
+usage: nrfcredstore [-h] [--baudrate BAUDRATE] [--timeout TIMEOUT] [--debug] [--cmd-type {at,shell,auto}]
+                    dev {list,write,delete,deleteall,imei,attoken,generate} ...
 
 Manage certificates stored in a cellular modem.
 
@@ -27,6 +28,9 @@ options:
   -h, --help            show this help message and exit
   --baudrate BAUDRATE   Serial baudrate
   --timeout TIMEOUT     Serial communication timeout in seconds
+  --debug               Enable debug logging
+  --cmd-type {at,shell,auto}
+                        Command type to use. "at" for AT commands, "shell" for shell commands, "auto" to detect automatically.
 
 subcommands:
   {list,write,delete,deleteall,imei,attoken,generate}
