@@ -15,12 +15,13 @@ For the device to respond to AT commands, the firmware on the device must have a
 ## Command Line Interface
 
 ```
-usage: nrfcredstore [-h] [--baudrate BAUDRATE] [--timeout TIMEOUT] dev {list,write,delete,generate} ...
+usage: nrfcredstore [-h] [--baudrate BAUDRATE] [--timeout TIMEOUT] dev {list,write,delete,deleteall,imei,attoken,generate} ...
 
 Manage certificates stored in a cellular modem.
 
 positional arguments:
-  dev                   Serial device used to communicate with the modem.
+  dev                   Device used to communicate with the modem. For interactive selection of serial port, use "auto". For RTT, use "rtt". If given a SEGGER
+                        serial number, it is assumed to be an RTT device.
 
 options:
   -h, --help            show this help message and exit
@@ -28,11 +29,14 @@ options:
   --timeout TIMEOUT     Serial communication timeout in seconds
 
 subcommands:
-  {list,write,delete,generate}
+  {list,write,delete,deleteall,imei,attoken,generate}
                         Certificate related commands
     list                List all keys stored in the modem
     write               Write key/cert to a secure tag
     delete              Delete value from a secure tag
+    deleteall           Delete all keys in a secure tag
+    imei                Get IMEI from the modem
+    attoken             Get attestation token of the modem
     generate            Generate private key
 ```
 
@@ -56,7 +60,7 @@ Secure tag   Key type           SHA
 
 ### write subcommand
 
-Write key/cert to a secure tag. KEY_TYPE must be either ROOT_CA_CERT, CLIENT_CERT, CLIENT_KEY, or PSK.
+Write key/cert to a security tag. KEY_TYPE must be either ROOT_CA_CERT, CLIENT_CERT, CLIENT_KEY, or PSK.
 
 ```
 usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev write SECURE_TAG KEY_TYPE FILENAME
@@ -68,7 +72,7 @@ usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev write SECURE_T
 
 ### delete subcommand
 
-Delete value from a secure tag.
+Delete value from a security tag.
 
 ```
 usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev delete SECURE_TAG KEY_TYPE
@@ -77,6 +81,31 @@ usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev delete SECURE_
 #### example
 
     $ nrfcredstore /dev/tty.usbmodem0009600000001 delete 123 ROOT_CA_CERT
+
+### deletall subcommand
+
+Delete all writable security tags.
+
+```
+usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev deleteall
+```
+
+### imei subcommand
+
+Read IMEI from modem.
+
+```
+usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev imei
+```
+
+### attoken subcommand
+
+Read Attestation Token from modem.
+
+```
+usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev attoken
+```
+
 
 ### generate subcommand
 

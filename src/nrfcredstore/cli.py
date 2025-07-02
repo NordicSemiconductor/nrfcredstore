@@ -21,7 +21,7 @@ ERR_SERIAL = 13
 
 def parse_args(in_args):
     parser = argparse.ArgumentParser(description='Manage certificates stored in a cellular modem.')
-    parser.add_argument('dev', help='Device used to communicate with the modem.')
+    parser.add_argument('dev', help='Device used to communicate with the modem. For interactive selection of serial port, use "auto". For RTT, use "rtt". If given a SEGGER serial number, it is assumed to be an RTT device.')
     parser.add_argument('--baudrate', type=int, default=115200, help='Serial baudrate')
     parser.add_argument('--timeout', type=int, default=3,
         help='Serial communication timeout in seconds')
