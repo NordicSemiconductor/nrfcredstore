@@ -13,6 +13,7 @@ import base64
 import hashlib
 import coloredlogs, logging
 import re
+from typing import List, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -32,27 +33,27 @@ class CredentialCommandInterface(ABC):
         self.comms.write_line(command)
 
     @abstractmethod
-    def write_credential(self, sectag: int, cred_type: int, cred_text: str):
+    def write_credential(self, sectag: int, cred_type: int, cred_text: str) -> bool:
         """Write a credential string to the command interface"""
-        return
+        return False
 
     @abstractmethod
-    def delete_credential(self, sectag: int, cred_type: int):
+    def delete_credential(self, sectag: int, cred_type: int) -> bool:
         """Delete a credential using command interface"""
-        return
+        return False
 
     @abstractmethod
-    def check_credential_exists(self, sectag: int, cred_type: int, get_hash=True):
+    def check_credential_exists(self, sectag: int, cred_type: int, get_hash=True) -> tuple[bool, Optional[str]]:
         """Verify that a credential is installed. If check_hash is true, retrieve the SHA hash."""
-        return
+        return False, None
 
     @abstractmethod
-    def calculate_expected_hash(self, cred_text: str):
+    def calculate_expected_hash(self, cred_text: str) -> str:
         """Returns the expected digest/hash for a given credential as a string"""
-        return
+        return ""
 
     @abstractmethod
-    def get_csr(self, sectag: int, attributes: str):
+    def get_csr(self, sectag: int, attributes: str) -> Optional[str]:
         """Generate a private/public keypair and a corresponding Certificate Signing Request.
 
         Returns:
@@ -61,17 +62,17 @@ class CredentialCommandInterface(ABC):
         return
 
     @abstractmethod
-    def go_offline(self):
+    def go_offline(self) -> bool:
         """Tell the device to go offline so that credentials can be modified"""
-        return
+        return False
 
     @abstractmethod
-    def get_imei(self):
+    def get_imei(self) -> Optional[str]:
         """Get device IMEI, if applicable"""
         return
 
     @abstractmethod
-    def get_mfw_version(self):
+    def get_mfw_version(self) -> Optional[str]:
         """Get modem firmware version, if applicable"""
         return
 
@@ -275,7 +276,7 @@ class TLSCredShellInterface(CredentialCommandInterface):
 
     def go_offline(self):
         # TLS credentials shell has no concept of online/offline. Just no-op.
-        pass
+        return True
 
     def get_imei(self):
         raise RuntimeError("The TLS Credentials Shell does not support IMEI extraction")

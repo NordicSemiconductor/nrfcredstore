@@ -9,6 +9,7 @@
 # Both serial and RTT backends are supported.
 
 from serial.tools import list_ports
+from serial.tools.list_ports_common import ListPortInfo
 import serial
 from collections import defaultdict
 import sys
@@ -19,7 +20,7 @@ from pynrfjprog import LowLevel
 import coloredlogs, logging
 import re
 import platform
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +104,7 @@ ERR_CODE_TO_MSG = {
 
 
 # Returns a list of printable name, serial number and serial port for connected Nordic boards
-def get_connected_nordic_boards() -> List[Tuple[str, Union[str, int], serial.Serial]]:
+def get_connected_nordic_boards() -> List[Tuple[str, Union[str, int], ListPortInfo]]:
     if platform.system() == 'Darwin':
         ports = sorted(list_ports.comports(), key=lambda x: x.device)
     else:
@@ -129,7 +130,7 @@ def get_connected_jlinks() -> List[int]:
 
 
 # For a serial device, return the serial number
-def extract_serial_number_from_serial_device(dev : serial.Serial) -> Union[str, int, None]:
+def extract_serial_number_from_serial_device(dev: ListPortInfo) -> Union[str, int, None]:
     hwid = dev.hwid
     # Get serial number from hwid, because port.serial_number is not always available
     serial = [x[4:] for x in hwid.split(" ") if x.startswith("SER=")]
@@ -142,7 +143,7 @@ def extract_serial_number_from_serial_device(dev : serial.Serial) -> Union[str, 
 
     return serial
 
-def extract_product_name_from_serial_device(dev : serial.Serial) -> str:
+def extract_product_name_from_serial_device(dev: ListPortInfo) -> str:
     for pattern, name, main_port in usb_patterns:
         if f"SER={pattern}" in dev.hwid:
             return name
@@ -151,16 +152,16 @@ def extract_product_name_from_serial_device(dev : serial.Serial) -> str:
             return text
     return ''
 
-def extract_product_name_from_jlink_serial(serial : str) -> str:
-    serial = f"{serial:012}"
+def extract_product_name_from_jlink_serial(serial : int) -> str:
+    serial_str = f"{serial:012}"
     for pattern, name, main_port in usb_patterns:
-        if pattern in serial:
+        if pattern in serial_str:
             return name
     return ''
 
 
 # Find the main port for a device if it's a Nordic board
-def get_port_index(dev : serial.Serial) -> Union[int, None]:
+def get_port_index(dev: ListPortInfo) -> Optional[int]:
     for pattern, name, main_port in usb_patterns:
         if f"SER={pattern}" in dev.hwid:
             return main_port
@@ -195,7 +196,7 @@ def select_jlink(jlinks : List[int], list_all: bool) -> int:
     return answer["serial"]
 
 
-def select_device_by_serial(serial_number : Union[str, int], list_all : bool) -> Tuple[serial.Serial, Union[str, int]]:
+def select_device_by_serial(serial_number : Union[str, int], list_all : bool) -> Tuple[ListPortInfo, Union[str, int]]:
     serial_devices = [
         x
         for x in list_ports.comports()
@@ -222,7 +223,7 @@ def select_device_by_serial(serial_number : Union[str, int], list_all : bool) ->
 
 
 # Returns serial_port, serial_number of selected device
-def select_device(rtt : bool, serial_number : Union[None, int, str], port : Union[None, serial.Serial], list_all : bool) -> Tuple[serial.Serial, Union[str, int]]:
+def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : Optional[ListPortInfo], list_all : bool) -> Tuple[Optional[ListPortInfo], Optional[Union[str, int]]]:
     if type(serial_number) == str and serial_number.isdigit():
         serial_number = int(serial_number)
 
@@ -372,7 +373,7 @@ class Comms:
         logger.debug(f"> {data}")
         self.write((data + self.line_ending).encode('ascii'))
 
-    def _readline_rtt(self) -> str:
+    def _readline_rtt(self) -> Optional[str]:
         time_end = time.time() + self.timeout
         while time.time() < time_end:
             self._rtt_line_buffer += self.jlink_api.rtt_read(channel_index=0, length=4096)
@@ -387,7 +388,7 @@ class Comms:
             time.sleep(0.1)
         return None
 
-    def _readline_serial(self) -> str:
+    def _readline_serial(self) -> Optional[str]:
         # Read a line from the serial port
         line = self.serial_api.readline()
         if line:
