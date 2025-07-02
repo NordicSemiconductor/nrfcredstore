@@ -122,12 +122,10 @@ def get_connected_nordic_boards() -> List[Tuple[str, Union[str, int], ListPortIn
                 break
     return main_ports
 
-
 # Returns a list of SEGGER J-Link serial numbers as int
 def get_connected_jlinks() -> List[int]:
     with LowLevel.API(LowLevel.DeviceFamily.UNKNOWN) as api:
         return api.enum_emu_snr() or []
-
 
 # For a serial device, return the serial number
 def extract_serial_number_from_serial_device(dev: ListPortInfo) -> Union[str, int, None]:
@@ -159,14 +157,12 @@ def extract_product_name_from_jlink_serial(serial : int) -> str:
             return name
     return ''
 
-
 # Find the main port for a device if it's a Nordic board
 def get_port_index(dev: ListPortInfo) -> Optional[int]:
     for pattern, name, main_port in usb_patterns:
         if f"SER={pattern}" in dev.hwid:
             return main_port
     return None
-
 
 def select_jlink(jlinks : List[int], list_all: bool) -> int:
     if len(jlinks) == 0:
@@ -220,7 +216,6 @@ def select_device_by_serial(serial_number : Union[str, int], list_all : bool) ->
     answer = inquirer.prompt([question])
     selected_port = answer["port"]
     return (selected_port, serial_number)
-
 
 # Returns serial_port, serial_number of selected device
 def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : Optional[ListPortInfo], list_all : bool) -> Tuple[Optional[ListPortInfo], Optional[Union[str, int]]]:
@@ -286,8 +281,6 @@ def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : 
     selected_port = answer["port"]
     extracted_serial_number = extract_serial_number_from_serial_device(selected_port)
     return (selected_port, extracted_serial_number)
-
-
 class Comms:
     def __init__(
         self,
@@ -444,4 +437,3 @@ class Comms:
         self.write = self._write_serial
         self.read_line = self._readline_serial
         self.reset_input_buffer = self.serial_api.reset_input_buffer
-
