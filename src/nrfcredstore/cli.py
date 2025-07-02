@@ -30,14 +30,14 @@ def parse_args(in_args):
         title='subcommands', dest='subcommand', help='Certificate related commands'
     )
 
-    # add list command
+    # Add list command
     list_parser = subparsers.add_parser('list', help='List all keys stored in the modem')
     list_parser.add_argument('--tag', type=int,
         help='Only list keys in secure tag')
     list_parser.add_argument('--type', choices=KEY_TYPES_OR_ANY, default='ANY',
         help='Only list key with given type')
 
-    # add write command
+    # Add write command
     write_parser = subparsers.add_parser('write', help='Write key/cert to a secure tag')
     write_parser.add_argument('tag', type=int,
         help='Secure tag to write key to')
@@ -48,7 +48,7 @@ def parse_args(in_args):
         type=argparse.FileType('r', encoding='UTF-8'),
         help='PEM file to read from')
 
-    # add delete command
+    # Add delete command
     delete_parser = subparsers.add_parser('delete', help='Delete value from a secure tag')
     delete_parser.add_argument('tag', type=int,
         help='Secure tag to delete key')
@@ -57,11 +57,11 @@ def parse_args(in_args):
 
     deleteall_parser = subparsers.add_parser('deleteall', help='Delete all keys in a secure tag')
 
-    imei_parser = subparsers.add_parser('imei', help='Get IMEI of the modem')
+    imei_parser = subparsers.add_parser('imei', help='Get IMEI from the modem')
 
     attoken_parser = subparsers.add_parser('attoken', help='Get attestation token of the modem')
 
-    # add generate command and args
+    # Add generate command and args
     generate_parser = subparsers.add_parser('generate', help='Generate private key')
     generate_parser.add_argument('tag', type=int,
         help='Secure tag to store generated key')
@@ -136,15 +136,15 @@ def run(argv=sys.argv):
     args = parse_args(argv[1:])
     comms = None
 
-    # use inquirer to find the device
+    # Use inquirer to find the device
     if args.dev == 'auto':
         comms = Comms(list_all=True, baudrate=args.baudrate, timeout=args.timeout)
     elif args.dev == 'rtt':
         comms = Comms(rtt=True, baudrate=args.baudrate, timeout=args.timeout)
-    # if dev is just numbers, assume it's an rtt device
+    # If dev is just numbers, assume it's an rtt device
     elif args.dev.isdigit():
         comms = Comms(rtt = True, serial_number = int(args.dev), timeout=args.timeout)
-    # otherwise, assume it's a serial device
+    # Otherwise, assume it's a serial device
     else:
         comms = Comms(port=args.dev, baudrate=args.baudrate, timeout=args.timeout)
 

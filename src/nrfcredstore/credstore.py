@@ -49,11 +49,11 @@ class CredStore:
         if tag is None and type != CredType.ANY:
             raise RuntimeError('Cannot list with type without a tag')
 
-        # optional secure tag
+        # Optional secure tag
         if tag is not None:
             cmd = f'{cmd},{tag}'
 
-            # optional key type
+            # Optional key type
             if type != CredType.ANY:
                 cmd = f'{cmd},{CredType(type).value}'
 

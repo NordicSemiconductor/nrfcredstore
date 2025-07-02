@@ -111,7 +111,7 @@ class ATCommandInterface(CredentialCommandInterface):
         """Write an AT command to the command interface. Optionally wait for OK"""
 
         if self.shell:
-            # transform line endings to match shell expectations
+            # Transform line endings to match shell expectations
             at_command = at_command.replace("\r", "")
             at_command = at_command.replace("\n", "\\n")
             self.write_raw("at '" + at_command + "'")
@@ -188,11 +188,11 @@ class ATCommandInterface(CredentialCommandInterface):
         if not retval:
             return None
 
-        # convert the encoded blob to an actual cert
+        # Convert the encoded blob to an actual cert
         csr_blob = str(output).split('"')[1]
         logger.debug('CSR blob: {}'.format(csr_blob))
 
-        # format is "body.cose"
+        # Format is "body.cose"
         # body is base64 encoded DER
         # cose is base64 encoded COSE header (CBOR)
 

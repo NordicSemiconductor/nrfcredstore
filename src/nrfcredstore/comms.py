@@ -102,7 +102,7 @@ ERR_CODE_TO_MSG = {
 # Windows: [(1, 'USB VID:PID=1366:1059 SER=001057731013'), (2, 'USB VID:PID=1366:1059 SER=001057731013 LOCATION=1-21:x.2')]
 
 
-# returns a list of printable name, serial number and serial port for connected Nordic boards
+# Returns a list of printable name, serial number and serial port for connected Nordic boards
 def get_connected_nordic_boards() -> List[Tuple[str, Union[str, int], serial.Serial]]:
     if platform.system() == 'Darwin':
         ports = sorted(list_ports.comports(), key=lambda x: x.device)
@@ -122,13 +122,13 @@ def get_connected_nordic_boards() -> List[Tuple[str, Union[str, int], serial.Ser
     return main_ports
 
 
-# returns a list of SEGGER J-Link serial numbers as int
+# Returns a list of SEGGER J-Link serial numbers as int
 def get_connected_jlinks() -> List[int]:
     with LowLevel.API(LowLevel.DeviceFamily.UNKNOWN) as api:
         return api.enum_emu_snr() or []
 
 
-# for a serial device, return the serial number
+# For a serial device, return the serial number
 def extract_serial_number_from_serial_device(dev : serial.Serial) -> Union[str, int, None]:
     hwid = dev.hwid
     # Get serial number from hwid, because port.serial_number is not always available
@@ -159,7 +159,7 @@ def extract_product_name_from_jlink_serial(serial : str) -> str:
     return ''
 
 
-# find the main port for a device if it's a Nordic board
+# Find the main port for a device if it's a Nordic board
 def get_port_index(dev : serial.Serial) -> Union[int, None]:
     for pattern, name, main_port in usb_patterns:
         if f"SER={pattern}" in dev.hwid:
@@ -221,7 +221,7 @@ def select_device_by_serial(serial_number : Union[str, int], list_all : bool) ->
     return (selected_port, serial_number)
 
 
-# returns serial_port, serial_number of selected device
+# Returns serial_port, serial_number of selected device
 def select_device(rtt : bool, serial_number : Union[None, int, str], port : Union[None, serial.Serial], list_all : bool) -> Tuple[serial.Serial, Union[str, int]]:
     if type(serial_number) == str and serial_number.isdigit():
         serial_number = int(serial_number)
@@ -345,7 +345,8 @@ class Comms:
             line = self.read_line()
             if line:
                 line = line.strip()
-                line = ansi_escape.sub('', line)  # remove ANSI escape codes
+                # Remove ANSI escape codes
+                line = ansi_escape.sub('', line)
                 if ok_str and ok_str == line:
                     return (True, output)
                 if error_str and error_str == line:
@@ -375,10 +376,10 @@ class Comms:
         time_end = time.time() + self.timeout
         while time.time() < time_end:
             self._rtt_line_buffer += self.jlink_api.rtt_read(channel_index=0, length=4096)
-            # find first line ending
+            # Find first line ending
             line_end = self._rtt_line_buffer.find(self.line_ending)
             if line_end != -1:
-                # split the line from the buffer
+                # Split the line from the buffer
                 line = self._rtt_line_buffer[:line_end]
                 self._rtt_line_buffer = self._rtt_line_buffer[line_end + len(self.line_ending) :]
                 logger.debug(f"< {line}")
@@ -387,7 +388,7 @@ class Comms:
         return None
 
     def _readline_serial(self) -> str:
-        # read a line from the serial port
+        # Read a line from the serial port
         line = self.serial_api.readline()
         if line:
             line = line.decode('utf-8', errors="replace").strip()
@@ -396,7 +397,7 @@ class Comms:
         return None
 
     def _write_rtt(self, data: bytes):
-        # hacky workaround from old rtt_interface
+        # Hacky workaround from old rtt_interface
         for i in range(0, len(data), 12):
             self.jlink_api.rtt_write(channel_index=0, msg=data[i : i + 12])
             time.sleep(0.01)
@@ -433,7 +434,7 @@ class Comms:
             rtscts=rtscts,
             dsrdtr=dsrdtr,
         )
-        # initialize the serial port, clear the buffers
+        # Initialize the serial port, clear the buffers
         self.serial_api.reset_output_buffer()
         self.serial_api.write(self.line_ending.encode('ascii'))
         self.serial_api.flush()
