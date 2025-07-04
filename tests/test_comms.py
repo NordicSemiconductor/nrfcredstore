@@ -444,3 +444,11 @@ def test_expect_response_timeout(mock_serial):
         assert result is False
         assert output == ''
 
+def test_expect_response_store(mock_serial):
+    with patch("nrfcredstore.comms.select_device", return_value=(Mock(), "123456789")) as mock_select:
+        comms = Comms()
+        comms.read_line = Mock(side_effect=['%ATTESTTOKEN: "foo.bar"', "OK"])
+        result, output = comms.expect_response("OK", "ERROR", "%ATTESTTOKEN: ")
+        mock_select.assert_called_once()
+        assert result is True
+        assert output.strip() == '%ATTESTTOKEN: "foo.bar"'
