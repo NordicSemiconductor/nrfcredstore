@@ -147,4 +147,4 @@ Running the tests depends on a [development installation](#development-installat
 
 Check coverage
 
-    poetry run pytest --cov=. tests
+    poetry run pytest --cov=src tests --cov-report=html
