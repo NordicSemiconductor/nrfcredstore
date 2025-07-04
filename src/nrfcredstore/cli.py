@@ -154,7 +154,7 @@ def run(argv=sys.argv):
         comms = Comms(rtt=True, baudrate=args.baudrate, timeout=args.timeout)
     # If dev is just numbers, assume it's an rtt device
     elif args.dev.isdigit():
-        comms = Comms(rtt = True, serial=int(args.dev), timeout=args.timeout)
+        comms = Comms(rtt=True, serial=int(args.dev), timeout=args.timeout)
     # Otherwise, assume it's a serial device
     else:
         comms = Comms(port=args.dev, baudrate=args.baudrate, timeout=args.timeout)

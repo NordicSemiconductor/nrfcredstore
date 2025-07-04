@@ -25,6 +25,14 @@ class TestCli():
     def empty_cred_list(self, credstore):
         credstore.list.return_value = []
 
+    @pytest.fixture
+    def cred_list_minimal(self, credstore):
+        credstore.list.return_value = [
+            Mock(tag=4294967292, type=CredType.NORDIC_PUB_KEY, sha='672E2F05962B4EFBFA8801255D87E0E0418F2DDF4DDAEFC59E9B4162F512CB63'),
+            Mock(tag=4294967293, type=CredType.NORDIC_ID_ROOT_CA, sha='2C43952EE9E000FF2ACC4E2ED0897C0A72AD5FA72C3D934E81741CBD54F05BD1'),
+            Mock(tag=4294967294, type=CredType.DEV_ID_PUB_KEY, sha='A0C145630DB69B4ED933DDE9F3E77BCD5540A869461DBC82D6F554EA64B6AC9E'),
+        ]
+
     # non-responsive device
     def test_non_responsive_device(self, credstore, command_interface):
         command_interface.detect_shell_mode.side_effect = TimeoutError()
@@ -36,7 +44,12 @@ class TestCli():
         command_interface.detect_shell_mode.enable_error_codes.return_value = False
         main(parse_args(['fakedev', 'list']), credstore)
 
-    def test_list_default(self, credstore, empty_cred_list):
+    def test_list_default_empty(self, credstore, empty_cred_list):
+        main(parse_args(['fakedev', 'list']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
+        credstore.list.assert_called_with(None, CredType.ANY)
+
+    def test_list_default(self, credstore, cred_list_minimal):
         main(parse_args(['fakedev', 'list']), credstore)
         credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
         credstore.list.assert_called_with(None, CredType.ANY)
@@ -80,6 +93,12 @@ class TestCli():
     def test_delete_any_should_fail(self, credstore):
         with pytest.raises(SystemExit):
             main(parse_args(['fakedev', 'delete', '123', 'ANY']), credstore)
+
+    def test_deleteall(self, credstore, cred_list_minimal):
+        credstore.deleteall.return_value = True
+        main(parse_args(['fakedev', 'deleteall']), credstore)
+        credstore.func_mode.assert_called_with(FUN_MODE_OFFLINE)
+        credstore.list.assert_called_with(None, CredType.ANY)
 
     @patch('builtins.open')
     def test_generate_tag(self, mock_file, credstore):
