@@ -1,6 +1,6 @@
 # nrfcredstore
 
-nrfcredstore is a command line tool that simplifies managing credentials stored in Nordic Semiconductor modems, like the [nRF9160](https://www.nordicsemi.com/products/nrf9160). The typical use case of nrfcredstore is to automate the provisioning of cloud certificates that are stored securely in the modem.
+nrfcredstore is a command line tool that simplifies managing credentials stored in Nordic Semiconductor modems, like the [nRF9151](https://www.nordicsemi.com/Products/nRF9151). The typical use case of nrfcredstore is to automate the provisioning of cloud certificates that are stored securely in the modem.
 
 ## Install
 
@@ -10,7 +10,7 @@ Run the following command to use this package as a dependency:
 
 ## Requirements
 
-For the device to respond to AT commands, the firmware on the device must have at_client enabled. This can be done by setting `CONFIG_AT_HOST_LIBRARY=y`. The [nRF9160: AT Client sample](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/samples/nrf9160/at_client/README.html) can also be used, and the [nRF9160 DK application and modem firmware](https://www.nordicsemi.com/Products/Development-hardware/nRF9160-DK/Download#infotabs) download contains a pre-built firmware.
+The device must be able to respond to AT commands. The [Cellular: AT Client sample](https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/samples/cellular/at_client/README.html) can be used, and the [nRF9151 DK application and modem firmware](https://www.nordicsemi.com/Products/Development-hardware/nRF9151-DK/Download?lang=en#infotabs) download contains a pre-built firmware.
 
 ## Command Line Interface
 
