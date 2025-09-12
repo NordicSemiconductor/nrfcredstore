@@ -71,13 +71,17 @@ ERR_CODE_TO_MSG = {
 # MacOS: 'USB VID:PID=1366:1059 SER=001051246141 LOCATION=0-1.4.2.3'
 # Windows: [(1, 'USB VID:PID=1366:1059 SER=001057731013'), (2, 'USB VID:PID=1366:1059 SER=001057731013 LOCATION=1-21:x.2')]
 
-
-# Returns a list of printable name, serial number and serial port for connected Nordic boards
-def get_connected_nordic_boards() -> List[Tuple[str, Union[str, int], ListPortInfo]]:
+def get_comports_fixed_ordering() -> List[ListPortInfo]:
     if platform.system() == 'Darwin':
         ports = sorted(list_ports.comports(), key=lambda x: x.device)
     else:
         ports = sorted(list_ports.comports(), key=lambda x: x.hwid)
+    return ports
+
+
+# Returns a list of printable name, serial number and serial port for connected Nordic boards
+def get_connected_nordic_boards() -> List[Tuple[str, Union[str, int], ListPortInfo]]:
+    ports = get_comports_fixed_ordering()
     nordic_boards = defaultdict(list)
     for port in ports:
         # Get serial number from hwid, because port.serial_number is not always available
@@ -166,7 +170,7 @@ def select_jlink(jlinks : List[int], list_all: bool) -> int:
 def select_device_by_serial(serial_number : Union[str, int], list_all : bool) -> Tuple[ListPortInfo, Union[str, int]]:
     serial_devices = [
         x
-        for x in list_ports.comports()
+        for x in get_comports_fixed_ordering()
         if extract_serial_number_from_serial_device(x) == serial_number
     ]
     if len(serial_devices) == 0:
@@ -207,7 +211,7 @@ def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : 
 
     if port:
         # Serial ports are unique, so we just check if it exists and try to get a serial number
-        serial_devices = [x for x in list_ports.comports() if x.device == port]
+        serial_devices = [x for x in get_comports_fixed_ordering() if x.device == port]
         if len(serial_devices) == 0:
             raise Exception(f"No device found with port {port}")
         extracted_serial_number = extract_serial_number_from_serial_device(
@@ -225,7 +229,7 @@ def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : 
 
     if list_all:
         # Show all ports, no filtering
-        ports = list_ports.comports()
+        ports = get_comports_fixed_ordering()
         question = inquirer.List(
             "port",
             message="Select a serial port",
