@@ -20,6 +20,7 @@ from pynrfjprog import LowLevel
 import coloredlogs, logging
 import re
 import platform
+import os
 from typing import Tuple, List, Union, Optional
 
 logger = logging.getLogger(__name__)
@@ -210,8 +211,9 @@ def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : 
         return (None, select_jlink(jlinks, list_all))
 
     if port:
+        real_path = os.path.realpath(port)
         # Serial ports are unique, so we just check if it exists and try to get a serial number
-        serial_devices = [x for x in get_comports_fixed_ordering() if x.device == port]
+        serial_devices = [x for x in get_comports_fixed_ordering() if x.device == real_path]
         if len(serial_devices) == 0:
             raise Exception(f"No device found with port {port}")
         extracted_serial_number = extract_serial_number_from_serial_device(

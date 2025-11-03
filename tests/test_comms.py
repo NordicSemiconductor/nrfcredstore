@@ -116,6 +116,11 @@ list_ports_linux_jlink_multi_com = [
     ),
 ]
 
+@pytest.fixture
+def mock_os_realpath():
+    with patch("nrfcredstore.comms.os.path.realpath", autospec=True) as m:
+        m.side_effect = lambda x: x  # identity function
+        yield m
 
 @pytest.fixture
 def platform_darwin():
@@ -351,7 +356,7 @@ def test_select_device_rtt_true_serial_number_not_found(platform_linux, ports_li
             )
 
 # port given
-def test_select_device_port_given(platform_linux, ports_linux_multi):
+def test_select_device_port_given(platform_linux, ports_linux_multi, mock_os_realpath):
     port, serial_number = select_device(
         rtt=False, serial_number=None, port="/dev/ttyACM0", list_all=False
     )
