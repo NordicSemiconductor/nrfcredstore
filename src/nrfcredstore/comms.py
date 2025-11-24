@@ -211,7 +211,13 @@ def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : 
         return (None, select_jlink(jlinks, list_all))
 
     if port:
-        real_path = os.path.realpath(port)
+        if port.startswith("COM"):
+            # workaround for Windows
+            real_path = port
+        else:
+            # for Linux users that make use of the /dev/serial/by-id/ symlink
+            real_path = os.path.realpath(port)
+
         # Serial ports are unique, so we just check if it exists and try to get a serial number
         serial_devices = [x for x in get_comports_fixed_ordering() if x.device == real_path]
         if len(serial_devices) == 0:
