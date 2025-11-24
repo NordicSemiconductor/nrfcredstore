@@ -64,7 +64,10 @@ class CredStore:
         response_lines = response.splitlines()
         response_lines = [line.strip() for line in response_lines if line.strip()]
 
-        columns = map(lambda line: line.replace('%CMNG: ', '').replace('"', '').split(','), response_lines)
+        # filter only lines beginning with the prefix
+        clean_lines = filter(lambda l: l.startswith("%CMNG:"), response_lines)
+
+        columns = map(lambda line: line.replace('%CMNG: ', '').replace('"', '').split(','), clean_lines)
         cred_map = map(lambda columns:
                 Credential(int(columns[0]), int(columns[1]), columns[2].strip()),
                 columns
