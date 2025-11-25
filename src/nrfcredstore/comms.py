@@ -197,7 +197,7 @@ def select_device_by_serial(serial_number : Union[str, int], list_all : bool) ->
     return (selected_port, serial_number)
 
 # Returns serial_port, serial_number of selected device
-def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : Optional[ListPortInfo], list_all : bool) -> Tuple[Optional[ListPortInfo], Optional[Union[str, int]]]:
+def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : str, list_all : bool) -> Tuple[Optional[ListPortInfo], Optional[Union[str, int]]]:
     if type(serial_number) == str and serial_number.isdigit():
         serial_number = int(serial_number)
 
@@ -221,6 +221,12 @@ def select_device(rtt : bool, serial_number : Optional[Union[str, int]], port : 
 
         # Serial ports are unique, so we just check if it exists and try to get a serial number
         serial_devices = [x for x in get_comports_fixed_ordering() if x.device == real_path]
+
+        # Workaround for macOS
+        if len(serial_devices) == 0 and real_path.startswith("/dev/tty"):
+            real_path = real_path.replace("tty", "cu")
+            serial_devices = [x for x in get_comports_fixed_ordering() if x.device == real_path]
+
         if len(serial_devices) == 0:
             raise Exception(f"No device found with port {port}")
         extracted_serial_number = extract_serial_number_from_serial_device(
