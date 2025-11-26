@@ -23,12 +23,19 @@ def parse_args(in_args):
     parser = argparse.ArgumentParser(description='Manage certificates stored in a cellular modem.')
     parser.add_argument('dev', help='Device used to communicate with the modem. For interactive selection of serial port, use "auto". For RTT, use "rtt". If given a SEGGER serial number, it is assumed to be an RTT device.')
     parser.add_argument('--baudrate', type=int, default=115200, help='Serial baudrate')
-    parser.add_argument('--timeout', type=int, default=3,
-        help='Serial communication timeout in seconds')
-    parser.add_argument('--debug', action='store_true',
-        help='Enable debug logging')
+    parser.add_argument('--timeout', type=int, default=3, help='Serial communication timeout in seconds')
+    parser.add_argument('--debug', action='store_true', help='Enable debug logging')
     parser.add_argument('--cmd-type', choices=['at', 'shell', 'auto'], default='auto',
-        help='Command type to use. "at" for AT commands, "shell" for shell commands, "auto" to detect automatically.')
+                        help='Command type to use. "at" for AT commands, "shell" for shell commands, "auto" to detect automatically.')
+    parser.add_argument("--xonxoff",
+                        help="Enable software flow control for serial connection",
+                        action='store_true', default=False)
+    parser.add_argument("--rtscts-off",
+                        help="Disable hardware (RTS/CTS) flow control for serial connection",
+                        action='store_true', default=False)
+    parser.add_argument("--dsrdtr",
+                        help="Enable hardware (DSR/DTR) flow control for serial connection",
+                        action='store_true', default=False)
 
     subparsers = parser.add_subparsers(
         title='subcommands', dest='subcommand', help='Certificate related commands'
@@ -149,7 +156,7 @@ def run(argv=sys.argv):
 
     # Use inquirer to find the device
     if args.dev == 'auto':
-        comms = Comms(list_all=True, baudrate=args.baudrate, timeout=args.timeout)
+        comms = Comms(list_all=True, baudrate=args.baudrate, timeout=args.timeout, xonxoff=args.xonxoff, rtscts=not args.rtscts_off, dsrdtr=args.dsrdtr)
     elif args.dev == 'rtt':
         comms = Comms(rtt=True, baudrate=args.baudrate, timeout=args.timeout)
     # If dev is just numbers, assume it's an rtt device
@@ -157,7 +164,7 @@ def run(argv=sys.argv):
         comms = Comms(rtt=True, serial=int(args.dev), timeout=args.timeout)
     # Otherwise, assume it's a serial device
     else:
-        comms = Comms(port=args.dev, baudrate=args.baudrate, timeout=args.timeout)
+        comms = Comms(port=args.dev, baudrate=args.baudrate, timeout=args.timeout, xonxoff=args.xonxoff, rtscts=not args.rtscts_off, dsrdtr=args.dsrdtr)
 
     cred_if = ATCommandInterface(comms)
 
