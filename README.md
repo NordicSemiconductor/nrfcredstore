@@ -119,7 +119,7 @@ usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev attoken
 ### generate subcommand
 
 > [!IMPORTANT]
-> This command requires modem firmware version greater than or equal to 1.3.0.
+> This command requires modem firmware version 1.3.0 or later.
 
 Generate a private key in the modem and output a certificate signing request.
 
