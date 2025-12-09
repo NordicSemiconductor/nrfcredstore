@@ -235,29 +235,27 @@ class TLSCredShellInterface(CredentialCommandInterface):
         for c in range(chunks):
             chunk = encoded[c*TLS_CRED_CHUNK_SIZE:(c+1)*TLS_CRED_CHUNK_SIZE]
             self.write_raw(f"cred buf {chunk}")
-            self.comms.expect_response("Stored")
+            self.comms.expect_response(ok_pattern="Stored")
 
         # Store the buffered credential
         self.write_raw(f"cred add {sectag} {TLS_CRED_TYPES[cred_type]} DEFAULT bint")
-        result, _ = self.comms.expect_response("Added TLS credential")
-        time.sleep(1)
+        result, _ = self.comms.expect_response(ok_pattern="Added TLS credential")
         return result
 
     def delete_credential(self, sectag: int, cred_type: int):
         self.write_raw(f'cred del {sectag} {TLS_CRED_TYPES[cred_type]}')
-        result, _ = self.comms.expect_response("Deleted TLS credential", "There is no TLS credential")
-        time.sleep(2)
+        result, _ = self.comms.expect_response(ok_pattern="Deleted TLS credential", error_pattern="There is no TLS credential")
         return result
 
     def check_credential_exists(self, sectag: int, cred_type: int, get_hash=True):
         self.write_raw(f'cred list {sectag} {TLS_CRED_TYPES[cred_type]}')
 
         # This will capture the list dump for the credential if it exists.
-        result, output = self.comms.expect_response("1 credentials found.",
-                                                    "0 credentials found.",
-                                                    f"{sectag},{TLS_CRED_TYPES[cred_type]}")
+        result, output = self.comms.expect_response(ok_pattern="1 credentials found.",
+                                                    error_pattern="0 credentials found.",
+                                                    store_str=f"{sectag},{TLS_CRED_TYPES[cred_type]}")
 
-        if not output:
+        if not result:
             return False, None
 
         if not get_hash:

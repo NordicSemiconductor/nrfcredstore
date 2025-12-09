@@ -322,7 +322,7 @@ class Comms:
             self.serial_api.close()
             self.serial_api = None
 
-    def expect_response(self, ok_str=None, error_str=None, store_str=None, timeout=15, suppress_errors=False):
+    def expect_response(self, ok_str=None, error_str=None, store_str=None, timeout=15, suppress_errors=False, error_pattern=None, ok_pattern=None):
         '''
         Read lines until either ok_str or error_str is found or timeout (seconds) is reached.
         If store_str is in one of the lines, it will be returned as the output.
@@ -339,7 +339,11 @@ class Comms:
                 line = ansi_escape.sub('', line)
                 if ok_str and ok_str == line:
                     return (True, output)
+                if ok_pattern and ok_pattern in line:
+                    return (True, output)
                 if error_str and error_str == line:
+                    return (False, output)
+                if error_pattern and error_pattern in line:
                     return (False, output)
                 if line.startswith('+CME ERROR'):
                     code = int(line.replace('+CME ERROR: ', ''))

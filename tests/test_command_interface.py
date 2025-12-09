@@ -49,6 +49,50 @@ def test_delete_credential_at(at_command_interface):
     at_command_interface.delete_credential(sectag=42, cred_type=CredType.CLIENT_CERT.value)
     at_command_interface.comms.write_line.assert_called_once_with('AT%CMNG=3,42,1')
 
+def test_delete_credential_tls(tls_cred_shell_interface):
+    """Test deleting a credential that exists in TLS shell"""
+    tls_cred_shell_interface.comms.write_line = Mock()
+    tls_cred_shell_interface.comms.expect_response.return_value = (True, '')
+    tls_cred_shell_interface.delete_credential(sectag=42, cred_type=CredType.ROOT_CA_CERT.value)
+    tls_cred_shell_interface.comms.write_line.assert_called_once_with('cred del 42 CA')
+
+def test_delete_credential_tls_not_found(tls_cred_shell_interface):
+    """Test deleting a credential that does not exist in TLS shell"""
+    tls_cred_shell_interface.comms.write_line = Mock()
+    tls_cred_shell_interface.comms.expect_response.return_value = (False, '')
+    tls_cred_shell_interface.delete_credential(sectag=42, cred_type=CredType.ROOT_CA_CERT.value)
+    tls_cred_shell_interface.comms.write_line.assert_called_once_with('cred del 42 CA')
+
+def test_check_credential_exists_tls(tls_cred_shell_interface):
+    """Test checking a credential that exists in TLS shell"""
+    tls_cred_shell_interface.comms.write_line = Mock()
+    tls_cred_shell_interface.comms.expect_response.return_value = (True, '42,CA,qLqL2kIyuj7FF9aFXQuhmc8kbMOHNYsM451gElqNyVQ=,0\r\n')
+    result, hash = tls_cred_shell_interface.check_credential_exists(sectag=42, cred_type=CredType.ROOT_CA_CERT.value, get_hash=True)
+    tls_cred_shell_interface.comms.write_line.assert_called_once_with('cred list 42 CA')
+    assert hash == 'qLqL2kIyuj7FF9aFXQuhmc8kbMOHNYsM451gElqNyVQ='
+    assert result == True
+
+def test_check_credential_exists_tls_not_found(tls_cred_shell_interface):
+    """Test checking a credential that does not exist in TLS shell"""
+    tls_cred_shell_interface.comms.write_line = Mock()
+    tls_cred_shell_interface.comms.expect_response.return_value = (False, '')
+    result, hash = tls_cred_shell_interface.check_credential_exists(sectag=42, cred_type=CredType.ROOT_CA_CERT.value, get_hash=True)
+    tls_cred_shell_interface.comms.write_line.assert_called_once_with('cred list 42 CA')
+    assert hash == None
+    assert result == False
+
+def test_write_credential_tls(tls_cred_shell_interface):
+    """Test writing a credential using TLSCredShellInterface"""
+    tls_cred_shell_interface.comms.write_line = Mock()
+    tls_cred_shell_interface.comms.expect_response.side_effect = [
+        (True, ""),
+        (True, "")
+    ]
+    result = tls_cred_shell_interface.write_credential(sectag=42, cred_type=CredType.CLIENT_CERT.value, cred_text='test_value')
+    assert result == True
+    assert tls_cred_shell_interface.comms.write_line.call_count >= 3
+
+
 def test_check_credential_exists_at(at_command_interface):
     """Test checking if a credential exists using ATCommandInterface"""
     at_command_interface.comms.write_line = Mock()

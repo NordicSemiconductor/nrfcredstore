@@ -457,3 +457,22 @@ def test_expect_response_store(mock_serial):
         mock_select.assert_called_once()
         assert result is True
         assert output.strip() == '%ATTESTTOKEN: "foo.bar"'
+
+def test_expect_response_pattern(mock_serial):
+    with patch("nrfcredstore.comms.select_device", return_value=(Mock(), "123456789")) as mock_select:
+        comms = Comms()
+        comms.read_line = Mock(side_effect=[
+            "Stored 48 bytes.",
+            "16842753,CA,qLqL2kIyuj7FF9aFXQuhmc8kbMOHNYsM451gElqNyVQ=,0",
+            "1 credentials found.",
+            "0 credentials found."
+        ])
+        assert comms.expect_response(ok_pattern="Stored") == (True, '')
+        assert comms.expect_response(
+            ok_pattern="1 credentials found.",
+            error_pattern="0 credentials found.",
+            store_str="16842753,CA") == (True, "16842753,CA,qLqL2kIyuj7FF9aFXQuhmc8kbMOHNYsM451gElqNyVQ=,0\r\n")
+        assert comms.expect_response(
+            ok_pattern="1 credentials found.",
+            error_pattern="0 credentials found.",
+            store_str="16842753,CA") == (False, '')
