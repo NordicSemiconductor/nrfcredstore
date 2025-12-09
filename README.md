@@ -91,7 +91,7 @@ usage: nrfcredstore [--baudrate BAUDRATE] [--timeout TIMEOUT] dev delete SECURE_
 
     $ nrfcredstore /dev/tty.usbmodem0009600000001 delete 123 ROOT_CA_CERT
 
-### deletall subcommand
+### deleteall subcommand
 
 Delete all writable security tags.
 
