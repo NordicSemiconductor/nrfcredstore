@@ -1,5 +1,10 @@
 # nrfcredstore
 
+
+[![PyPI version](https://img.shields.io/pypi/v/nrfcredstore)](https://pypi.org/project/nrfcredstore/)
+![License](https://img.shields.io/pypi/l/nrfcredstore)
+![Python versions](https://img.shields.io/pypi/pyversions/nrfcredstore)
+
 nrfcredstore is a command line tool that simplifies managing credentials stored in Nordic Semiconductor modems, like the [nRF9151](https://www.nordicsemi.com/Products/nRF9151). The typical use case of nrfcredstore is to automate the provisioning of cloud certificates that are stored securely in the modem.
 
 ## Install
